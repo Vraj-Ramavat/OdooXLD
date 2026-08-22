@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, MapPin, Compass, Calendar, Globe, Award, Sparkles } from 'lucide-react';
+import VoyaraLogo from './VoyaraLogo';
 
 const PASSPORT_STAMPS = [
   { city: "Paris", country: "France", year: "2024", color: "magenta" },
@@ -51,12 +52,12 @@ export default function ProfilePage({ activeUser, onNavigate }) {
             padding: '24px',
             textAlign: 'center'
           }}>
-            <Globe size={32} style={{ color: 'var(--magenta)', marginBottom: '8px' }} />
+            <VoyaraLogo size={36} style={{ marginBottom: '8px' }} />
             <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.2em', color: 'var(--off-white)' }}>
-              GLOBALTROTTER UNION
+              VOYARA UNION
             </h3>
             <span style={{ fontSize: '0.6rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-              PASSPORT NO. GT-8822-1404
+              PASSPORT NO. VY-8822-1404
             </span>
           </div>
 

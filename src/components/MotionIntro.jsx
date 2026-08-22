@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import VoyaraLogo from './VoyaraLogo';
 
 const INTRO_PHOTOS = [
   "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80", // Paris
@@ -288,6 +289,7 @@ export default function MotionIntro({ onComplete }) {
               gap: '12px'
             }}
           >
+            <VoyaraLogo size={80} style={{ marginBottom: '10px' }} />
             <h1 style={{
               fontFamily: "'Playfair Display', serif",
               fontSize: '4.5rem',
@@ -296,16 +298,15 @@ export default function MotionIntro({ onComplete }) {
               color: '#F3EEF1',
               textShadow: '0 4px 20px rgba(0,0,0,0.5)'
             }}>
-              GLOBALTROTTER
+              VOYARA
             </h1>
             <h3 style={{
-              fontFamily: "'Space Mono', monospace",
-              fontSize: '0.9rem',
+              fontFamily: "var(--font-sans), sans-serif",
+              fontSize: '1rem',
               color: '#C94F82',
-              letterSpacing: '0.4em',
-              textTransform: 'uppercase'
+              letterSpacing: '0.15em'
             }}>
-              DIGITAL TRAVEL JOURNAL
+              Your journey, your way.
             </h3>
             
             <motion.div

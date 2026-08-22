@@ -15,6 +15,7 @@ import {
   Menu,
   ChevronLeft
 } from 'lucide-react';
+import VoyaraLogo from './VoyaraLogo';
 
 export default function Sidebar({ 
   currentScreen, 
@@ -56,21 +57,28 @@ export default function Sidebar({
             display: 'flex', 
             justifyContent: isCollapsed ? 'center' : 'space-between', 
             alignItems: 'center',
-            width: '100%'
+            width: '100%',
+            flexDirection: isCollapsed ? 'column' : 'row',
+            gap: isCollapsed ? '12px' : '0px'
           }}>
-            {!isCollapsed && (
-              <h1 style={{ 
-                fontFamily: 'var(--font-serif)', 
-                fontSize: '1.6rem', 
-                fontWeight: 800, 
-                color: 'var(--off-white)', 
-                letterSpacing: '0.05em', 
-                lineHeight: '1.1',
-                whiteSpace: 'nowrap',
-                marginRight: '16px'
-              }}>
-                GLOBALTROTTER
-              </h1>
+            {!isCollapsed ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <VoyaraLogo size={32} />
+                <h1 style={{ 
+                  fontFamily: 'var(--font-serif)', 
+                  fontSize: '1.6rem', 
+                  fontWeight: 800, 
+                  color: 'var(--off-white)', 
+                  letterSpacing: '0.05em', 
+                  lineHeight: '1.1',
+                  whiteSpace: 'nowrap',
+                  margin: 0
+                }}>
+                  VOYARA
+                </h1>
+              </div>
+            ) : (
+              <VoyaraLogo size={32} />
             )}
             <button className="sidebar-toggle-btn" onClick={onToggleCollapse} aria-label="Toggle Sidebar" style={{ flexShrink: 0 }}>
               {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
@@ -80,14 +88,14 @@ export default function Sidebar({
           {/* Subtitle Row */}
           {!isCollapsed && (
             <p style={{ 
-              fontFamily: 'var(--font-mono)', 
-              fontSize: '0.7rem', 
+              fontFamily: 'var(--font-sans)', 
+              fontSize: '0.75rem', 
               color: 'var(--magenta)', 
-              letterSpacing: '0.15em', 
-              textTransform: 'uppercase', 
-              marginTop: '4px'
+              letterSpacing: '0.05em', 
+              marginTop: '6px',
+              paddingLeft: '44px'
             }}>
-              DIGITAL JOURNAL
+              Your journey, your way.
             </p>
           )}
         </div>

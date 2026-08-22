@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../db/supabaseClient';
 import { Lock, Mail, User, Phone, MapPin, Globe, FileText, ArrowRight, Camera } from 'lucide-react';
+import VoyaraLogo from './VoyaraLogo';
 
 export default function LoginSignup({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -104,26 +105,30 @@ export default function LoginSignup({ onAuthSuccess }) {
           }}
         />
 
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h2 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            letterSpacing: '0.05em',
-            lineHeight: 1.1,
-            color: '#F3EEF1'
-          }}>
-            GLOBALTROTTER
-          </h2>
-          <p style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: '0.75rem',
-            color: '#C94F82',
-            letterSpacing: '0.2em',
-            marginTop: '4px'
-          }}>
-            DIGITAL TRAVEL JOURNAL
-          </p>
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <VoyaraLogo size={60} />
+          <div>
+            <h2 style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: '2.5rem',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              lineHeight: 1.1,
+              color: '#F3EEF1',
+              margin: 0
+            }}>
+              VOYARA
+            </h2>
+            <p style={{
+              fontFamily: "var(--font-sans), sans-serif",
+              fontSize: '0.75rem',
+              color: '#C94F82',
+              letterSpacing: '0.05em',
+              marginTop: '4px'
+            }}>
+              Your journey, your way.
+            </p>
+          </div>
         </div>
 
         <div style={{ position: 'relative', zIndex: 2, maxWidth: '80%' }}>
