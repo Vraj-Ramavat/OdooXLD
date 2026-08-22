@@ -11,7 +11,9 @@ import {
   Settings, 
   BookOpen,
   LogOut,
-  Globe
+  Globe,
+  Menu,
+  ChevronLeft
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -20,7 +22,9 @@ export default function Sidebar({
   activeUser, 
   onSignOut,
   isDarkMode,
-  onToggleTheme 
+  onToggleTheme,
+  isCollapsed,
+  onToggleCollapse
 }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,12 +40,56 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="sidebar">
-      {/* Top Header Logo */}
+    <aside className={`sidebar ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+      {/* Top Header Logo & Toggle Button */}
       <div>
-        <div className="sidebar-logo">
-          <h1>GLOBALTROTTER</h1>
-          <p>Digital Journal</p>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          marginBottom: '20px', 
+          borderBottom: '1px solid var(--border)', 
+          paddingBottom: '20px',
+          marginRight: isCollapsed ? 0 : '-8px'
+        }}>
+          {/* Header Row: Title and Button */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: isCollapsed ? 'center' : 'space-between', 
+            alignItems: 'center',
+            width: '100%'
+          }}>
+            {!isCollapsed && (
+              <h1 style={{ 
+                fontFamily: 'var(--font-serif)', 
+                fontSize: '1.6rem', 
+                fontWeight: 800, 
+                color: 'var(--off-white)', 
+                letterSpacing: '0.05em', 
+                lineHeight: '1.1',
+                whiteSpace: 'nowrap',
+                marginRight: '16px'
+              }}>
+                GLOBALTROTTER
+              </h1>
+            )}
+            <button className="sidebar-toggle-btn" onClick={onToggleCollapse} aria-label="Toggle Sidebar" style={{ flexShrink: 0 }}>
+              {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
+
+          {/* Subtitle Row */}
+          {!isCollapsed && (
+            <p style={{ 
+              fontFamily: 'var(--font-mono)', 
+              fontSize: '0.7rem', 
+              color: 'var(--magenta)', 
+              letterSpacing: '0.15em', 
+              textTransform: 'uppercase', 
+              marginTop: '4px'
+            }}>
+              DIGITAL JOURNAL
+            </p>
+          )}
         </div>
 
         {/* Navigation Items */}

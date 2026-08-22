@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
 import { db } from './db/supabaseClient';
 
 // Import Screens
@@ -27,6 +28,17 @@ export default function App() {
   const [sharedToken, setSharedToken] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [authChecking, setAuthChecking] = useState(true);
+
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return sessionStorage.getItem('gt_sidebar_collapsed') === 'true';
+  });
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleToggleCollapse = () => {
+    const newVal = !isCollapsed;
+    setIsCollapsed(newVal);
+    sessionStorage.setItem('gt_sidebar_collapsed', String(newVal));
+  };
 
   // Check login session & route hashes on mount
   useEffect(() => {
@@ -81,6 +93,7 @@ export default function App() {
 
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
+    setIsMobileOpen(false);
     // Sync hash to URL
     if (screen === 'shared-trip' && sharedToken) {
       window.location.hash = `shared/${sharedToken}`;
@@ -273,7 +286,24 @@ export default function App() {
   const isAnonymousShared = currentScreen === 'shared-trip' && !user;
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isCollapsed ? 'sidebar-collapsed' : ''} ${isMobileOpen ? 'mobile-sidebar-open' : ''}`}>
+      {!isAnonymousShared && currentScreen !== 'login' && currentScreen !== 'signup' && (
+        <button 
+          className="mobile-nav-toggle" 
+          onClick={() => setIsMobileOpen(true)}
+          aria-label="Open Sidebar"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
+      {!isAnonymousShared && currentScreen !== 'login' && currentScreen !== 'signup' && (
+        <div 
+          className={`sidebar-backdrop ${isMobileOpen ? 'active' : ''}`}
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
       {!isAnonymousShared && currentScreen !== 'login' && currentScreen !== 'signup' && (
         <Sidebar 
           currentScreen={currentScreen} 
@@ -282,6 +312,8 @@ export default function App() {
           onSignOut={handleSignOut}
           isDarkMode={isDarkMode}
           onToggleTheme={handleToggleTheme}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={handleToggleCollapse}
         />
       )}
       

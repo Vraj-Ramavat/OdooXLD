@@ -114,6 +114,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   padding: 24px 16px;
   z-index: 100;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-content {
@@ -122,6 +123,103 @@ h1, h2, h3, h4, h5, h6 {
   min-height: 100vh;
   background-color: var(--bg);
   padding: 40px;
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Toggle Buttons & Interactive classes */
+.sidebar-toggle-btn {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  color: var(--off-white);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.sidebar-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.mobile-nav-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 999;
+  background-color: var(--primary-dark);
+  border: 1px solid var(--border);
+  color: var(--off-white);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.sidebar-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Collapsed state modifier */
+.sidebar-collapsed {
+  --sidebar-width: 80px;
+}
+
+.sidebar-collapsed .sidebar-logo h1 {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.sidebar-collapsed .sidebar-logo p,
+.sidebar-collapsed .profile-widget .profile-info,
+.sidebar-collapsed .theme-toggle-row,
+.sidebar-collapsed .sidebar-footer button span,
+.sidebar-collapsed .nav-link span {
+  display: none !important;
+}
+
+.sidebar-collapsed .sidebar-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 16px;
+}
+
+.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar-collapsed .sidebar-footer button {
+  padding: 10px;
 }
 
 /* Navigation items */
@@ -721,46 +819,59 @@ input:checked + .slider:before {
     flex-direction: column;
   }
   
+  .mobile-nav-toggle {
+    display: flex;
+  }
+  
   .sidebar {
     position: fixed;
-    top: auto;
+    top: 0;
     bottom: 0;
     left: 0;
-    right: 0;
-    width: 100%;
-    height: 60px;
-    flex-direction: row;
-    padding: 0 10px;
-    border-right: none;
-    border-top: 1px solid var(--border);
-    justify-content: space-around;
-    align-items: center;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+    width: 250px;
+    height: 100%;
+    flex-direction: column;
+    padding: 24px 16px;
+    border-right: 1px solid var(--border);
+    border-top: none;
+    justify-content: space-between;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
     z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-sidebar-open .sidebar {
+    transform: translateX(0);
   }
   
   .sidebar-logo, .sidebar-footer {
-    display: none;
+    display: flex !important;
   }
   
   .nav-links {
-    flex-direction: row;
-    justify-content: space-around;
+    flex-direction: column;
     width: 100%;
-    gap: 0;
+    gap: 4px;
     padding: 0;
-    overflow-y: hidden;
+    overflow-y: auto;
   }
   
   .nav-link {
-    padding: 8px 16px;
-    border-radius: 50%;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    justify-content: flex-start;
+  }
+  
+  .nav-link span {
+    display: inline !important;
   }
   
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     padding: 16px;
-    padding-bottom: 80px; /* Space for mobile nav */
+    padding-top: 75px; /* space for floating menu button */
+    padding-bottom: 40px;
   }
   
   .grid-cols-2, .grid-cols-3, .grid-cols-4 {
