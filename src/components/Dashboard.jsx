@@ -24,10 +24,10 @@ export default function Dashboard({
   const [featuredTrip, setFeaturedTrip] = useState(null);
   const [upcomingTrips, setUpcomingTrips] = useState([]);
   const [stats, setStats] = useState({
-    cities: 12,
-    countries: 7,
-    days: 38,
-    spent: 245000
+    cities: 0,
+    countries: 0,
+    days: 0,
+    spent: 0
   });
   const [popularDests, setPopularDests] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
@@ -35,15 +35,15 @@ export default function Dashboard({
   
   // Budget breakdown for donut chart (live computed)
   const [budgetSummary, setBudgetSummary] = useState({
-    total: 145000,
-    spent: 85000,
-    remaining: 60000,
+    total: 0,
+    spent: 0,
+    remaining: 0,
     breakdown: {
-      Transport: 35000,
-      Stay: 25000,
-      Activities: 15000,
-      Food: 8000,
-      Other: 2000
+      Transport: 0,
+      Stay: 0,
+      Activities: 0,
+      Food: 0,
+      Other: 0
     }
   });
 
@@ -70,35 +70,50 @@ export default function Dashboard({
 
       // Calculate dynamic budget details for featured trip
       const { data: expenses } = await db.expenses.list(featured.id);
-      if (expenses && expenses.length > 0) {
-        const sum = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-        const categories = expenses.reduce((acc, curr) => {
-          const cat = curr.category || 'Other';
-          acc[cat] = (acc[cat] || 0) + Number(curr.amount);
-          return acc;
-        }, { Transport: 0, Stay: 0, Activities: 0, Food: 0, Other: 0 });
+      const sum = (expenses || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const categories = (expenses || []).reduce((acc, curr) => {
+        const cat = curr.category || 'Other';
+        acc[cat] = (acc[cat] || 0) + Number(curr.amount);
+        return acc;
+      }, { Transport: 0, Stay: 0, Activities: 0, Food: 0, Other: 0 });
 
-        setBudgetSummary({
-          total: featured.budget,
-          spent: sum,
-          remaining: Math.max(0, featured.budget - sum),
-          breakdown: categories
-        });
-      } else {
-        // Fallback defaults
-        setBudgetSummary({
-          total: featured.budget,
-          spent: 85000,
-          remaining: featured.budget - 85000,
-          breakdown: { Transport: 45000, Stay: 20000, Activities: 10000, Food: 8000, Other: 2000 }
-        });
-      }
+      setBudgetSummary({
+        total: featured.budget,
+        spent: sum,
+        remaining: Math.max(0, featured.budget - sum),
+        breakdown: categories
+      });
+
+      const totalCities = userTrips.reduce((acc, t) => acc + (t.cities ? t.cities.length : 0), 0);
+      const totalDays = userTrips.reduce((acc, t) => acc + (t.duration_days || 0), 0);
+      const totalSpent = userTrips.reduce((acc, t) => acc + Number(t.budget || 0), 0);
+
+      setStats({
+        cities: activeUser.cities_visited || totalCities,
+        countries: activeUser.countries_visited || (totalCities > 0 ? Math.ceil(totalCities / 2) : 0),
+        days: activeUser.days_traveled || totalDays,
+        spent: activeUser.total_spent || totalSpent
+      });
+    } else {
+      setFeaturedTrip(null);
+      setUpcomingTrips([]);
+      setBudgetSummary({
+        total: 0,
+        spent: 0,
+        remaining: 0,
+        breakdown: { Transport: 0, Stay: 0, Activities: 0, Food: 0, Other: 0 }
+      });
+      setStats({
+        cities: activeUser.cities_visited || 0,
+        countries: activeUser.countries_visited || 0,
+        days: activeUser.days_traveled || 0,
+        spent: activeUser.total_spent || 0
+      });
     }
 
     // 2. Fetch popular destinations
     const { data: dests } = await db.destinations.list();
     if (dests) {
-      // Filter list down to popular
       setPopularDests(dests.filter(d => ['Paris', 'Santorini', 'Tokyo', 'Bali'].includes(d.name)));
     }
 
@@ -106,16 +121,6 @@ export default function Dashboard({
     const { data: logs } = await db.timeline.list();
     if (logs) {
       setActivityLogs(logs);
-    }
-
-    // 4. Update stats summary
-    if (activeUser.cities_visited) {
-      setStats({
-        cities: activeUser.cities_visited,
-        countries: activeUser.countries_visited,
-        days: activeUser.days_traveled,
-        spent: activeUser.total_spent
-      });
     }
   };
 

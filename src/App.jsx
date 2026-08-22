@@ -7,6 +7,7 @@ import MotionIntro from './components/MotionIntro';
 import Sidebar from './components/Sidebar';
 import LoginSignup from './components/LoginSignup';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import CreateTrip from './components/CreateTrip';
 import MyTrips from './components/MyTrips';
 import ItineraryBuilder from './components/ItineraryBuilder';
@@ -23,11 +24,13 @@ import TravelAssistant from './components/TravelAssistant';
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('intro'); // intro, dashboard, etc.
+  const [currentScreen, setCurrentScreen] = useState('intro'); // intro initially on refresh
+  const [targetScreen, setTargetScreen] = useState('dashboard');
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [sharedToken, setSharedToken] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [authChecking, setAuthChecking] = useState(true);
+  const [introFinished, setIntroFinished] = useState(false);
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return sessionStorage.getItem('gt_sidebar_collapsed') === 'true';
@@ -43,7 +46,6 @@ export default function App() {
   // Check login session & route hashes on mount
   useEffect(() => {
     checkSession();
-    parseHashRoute();
 
     window.addEventListener('hashchange', parseHashRoute);
     return () => window.removeEventListener('hashchange', parseHashRoute);
@@ -51,7 +53,9 @@ export default function App() {
 
   const checkSession = async () => {
     const { data } = await db.auth.getUser();
+    let authUser = null;
     if (data && data.user) {
+      authUser = data.user;
       setUser(data.user);
       
       // Auto pre-select their first trip if available
@@ -61,20 +65,22 @@ export default function App() {
       }
     }
     
-    // Check if intro has already been played
-    const introPlayed = localStorage.getItem('gt_intro_played');
-    
-    // Route logic
+    // Determine target route from URL hash
     const hash = window.location.hash;
+    let target = authUser ? (authUser.is_admin ? 'admin' : 'dashboard') : 'login';
+
     if (hash.startsWith('#shared/')) {
-      // Shared links can be viewed anonymously, skip intro & skip login redirect
-      setCurrentScreen('shared-trip');
-    } else if (introPlayed === 'true') {
-      setCurrentScreen(data && data.user ? 'dashboard' : 'login');
-    } else {
-      setCurrentScreen('intro');
+      const token = hash.split('/')[1];
+      setSharedToken(token);
+      target = 'shared-trip';
+    } else if (hash === '#admin') {
+      target = authUser?.is_admin ? 'admin' : (authUser ? 'dashboard' : 'login');
+    } else if (hash && hash !== '#intro') {
+      const screenName = hash.replace('#', '');
+      target = authUser ? screenName : 'login';
     }
-    
+
+    setTargetScreen(target);
     setAuthChecking(false);
   };
 
@@ -84,10 +90,15 @@ export default function App() {
       const token = hash.split('/')[1];
       setSharedToken(token);
       setCurrentScreen('shared-trip');
-    } else if (hash === '#dashboard' && user) {
-      setCurrentScreen('dashboard');
-    } else if (hash === '#my-trips' && user) {
-      setCurrentScreen('my-trips');
+    } else if (hash === '#admin') {
+      if (user?.is_admin) {
+        setCurrentScreen('admin');
+      } else {
+        setCurrentScreen('dashboard');
+      }
+    } else if (hash && hash !== '#intro') {
+      const screenName = hash.replace('#', '');
+      if (user) setCurrentScreen(screenName);
     }
   };
 
@@ -104,7 +115,11 @@ export default function App() {
 
   const handleAuthSuccess = (authUser) => {
     setUser(authUser);
-    handleNavigate('dashboard');
+    if (authUser?.is_admin) {
+      handleNavigate('admin');
+    } else {
+      handleNavigate('dashboard');
+    }
   };
 
   const handleSignOut = async () => {
@@ -250,6 +265,18 @@ export default function App() {
             onNavigate={handleNavigate}
           />
         );
+      case 'admin':
+        if (!user?.is_admin) {
+          handleNavigate('dashboard');
+          return null;
+        }
+        return (
+          <AdminDashboard 
+            activeUser={user} 
+            onNavigate={handleNavigate} 
+            onSelectTrip={handleSelectTrip} 
+          />
+        );
       default:
         return (
           <Dashboard 
@@ -262,7 +289,7 @@ export default function App() {
   };
 
   if (currentScreen === 'intro') {
-    return <MotionIntro onComplete={() => handleNavigate(user ? 'dashboard' : 'login')} />;
+    return <MotionIntro onComplete={() => handleNavigate(user ? (user.is_admin ? 'admin' : 'dashboard') : 'login')} />;
   }
 
   if (authChecking) {

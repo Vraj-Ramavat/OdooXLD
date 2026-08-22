@@ -13,7 +13,8 @@ import {
   LogOut,
   Globe,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  ShieldCheck
 } from 'lucide-react';
 import VoyaraLogo from './VoyaraLogo';
 
@@ -27,7 +28,7 @@ export default function Sidebar({
   isCollapsed,
   onToggleCollapse
 }) {
-  const menuItems = [
+  const baseMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'my-trips', label: 'My Trips', icon: Map },
     { id: 'itinerary-builder', label: 'Itinerary', icon: BookOpen },
@@ -40,17 +41,23 @@ export default function Sidebar({
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
+  if (activeUser?.is_admin) {
+    baseMenuItems.unshift({ id: 'admin', label: 'Admin Dashboard', icon: ShieldCheck });
+  }
+
+  const menuItems = baseMenuItems;
+
   return (
     <aside className={`sidebar ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
-      {/* Top Header Logo & Toggle Button */}
-      <div>
+      {/* Top Header Logo & Navigation Container */}
+      <div className="sidebar-top-container">
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column',
-          marginBottom: '20px', 
+          marginBottom: '10px', 
           borderBottom: '1px solid var(--border)', 
-          paddingBottom: '20px',
-          marginRight: isCollapsed ? 0 : '-8px'
+          paddingBottom: '8px',
+          marginRight: isCollapsed ? 0 : '-4px'
         }}>
           {/* Header Row: Title and Button */}
           <div style={{ 
@@ -59,14 +66,14 @@ export default function Sidebar({
             alignItems: 'center',
             width: '100%',
             flexDirection: isCollapsed ? 'column' : 'row',
-            gap: isCollapsed ? '12px' : '0px'
+            gap: isCollapsed ? '8px' : '0px'
           }}>
             {!isCollapsed ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <VoyaraLogo size={32} />
+                <VoyaraLogo size={26} />
                 <h1 style={{ 
                   fontFamily: 'var(--font-serif)', 
-                  fontSize: '1.6rem', 
+                  fontSize: '1.35rem', 
                   fontWeight: 800, 
                   color: 'var(--off-white)', 
                   letterSpacing: '0.05em', 
@@ -78,10 +85,10 @@ export default function Sidebar({
                 </h1>
               </div>
             ) : (
-              <VoyaraLogo size={32} />
+              <VoyaraLogo size={26} />
             )}
             <button className="sidebar-toggle-btn" onClick={onToggleCollapse} aria-label="Toggle Sidebar" style={{ flexShrink: 0 }}>
-              {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+              {isCollapsed ? <Menu size={18} /> : <ChevronLeft size={18} />}
             </button>
           </div>
 
@@ -89,11 +96,11 @@ export default function Sidebar({
           {!isCollapsed && (
             <p style={{ 
               fontFamily: 'var(--font-sans)', 
-              fontSize: '0.75rem', 
+              fontSize: '0.65rem', 
               color: 'var(--magenta)', 
               letterSpacing: '0.05em', 
-              marginTop: '6px',
-              paddingLeft: '44px'
+              marginTop: '4px',
+              margin: 0
             }}>
               Your journey, your way.
             </p>

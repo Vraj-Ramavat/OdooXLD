@@ -32,14 +32,17 @@ export default function CalendarPage({ activeUser, selectedTripId, onSelectTrip 
   const loadTrips = async () => {
     if (!activeUser) return;
     const { data } = await db.trips.list(activeUser.id);
-    if (data) {
+    if (data && data.length > 0) {
       setTripsList(data);
-      // Auto-select a trip if none selected
       const selected = data.find(t => t.id === selectedTripId) || data[0];
       if (selected) {
         onSelectTrip(selected.id);
         loadTripDetails(selected.id);
       }
+    } else {
+      setTripsList([]);
+      setActiveTrip(null);
+      setItinerary([]);
     }
   };
 
@@ -268,6 +271,16 @@ export default function CalendarPage({ activeUser, selectedTripId, onSelectTrip 
     ? itinerary.filter(item => item.day_number === selectedTripInfo.dayNum)
     : [];
 
+  const [sortBy, setSortBy] = useState('date-asc'); // date-asc, date-desc, budget-desc, duration
+
+  const sortedTripsList = [...tripsList].sort((a, b) => {
+    if (sortBy === 'date-asc') return new Date(a.start_date) - new Date(b.start_date);
+    if (sortBy === 'date-desc') return new Date(b.start_date) - new Date(a.start_date);
+    if (sortBy === 'budget-desc') return Number(b.budget) - Number(a.budget);
+    if (sortBy === 'duration') return (b.duration_days || 0) - (a.duration_days || 0);
+    return 0;
+  });
+
   return (
     <div className="flex-col">
       {/* Header row */}
@@ -286,18 +299,35 @@ export default function CalendarPage({ activeUser, selectedTripId, onSelectTrip 
         </div>
 
         {/* Dropdown configure */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <label className="form-label" style={{ marginBottom: 0 }}>ACTIVE_TRIP:</label>
-          <select 
-            className="form-input" 
-            style={{ width: '220px', height: '40px', padding: '0 12px' }}
-            value={activeTrip?.id || ''}
-            onChange={(e) => handleTripChange(e.target.value)}
-          >
-            {tripsList.map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label className="form-label" style={{ marginBottom: 0 }}>SORT_BY:</label>
+            <select 
+              className="form-input" 
+              style={{ width: '160px', height: '40px', padding: '0 10px', fontSize: '0.8rem' }}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="date-asc">Date: Earliest First</option>
+              <option value="date-desc">Date: Latest First</option>
+              <option value="budget-desc">Budget: High to Low</option>
+              <option value="duration">Duration: Longest</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label className="form-label" style={{ marginBottom: 0 }}>ACTIVE_TRIP:</label>
+            <select 
+              className="form-input" 
+              style={{ width: '220px', height: '40px', padding: '0 12px' }}
+              value={activeTrip?.id || ''}
+              onChange={(e) => handleTripChange(e.target.value)}
+            >
+              {sortedTripsList.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

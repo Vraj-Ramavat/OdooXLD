@@ -224,14 +224,14 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Navigation items */
 .sidebar-logo {
-  padding-bottom: 24px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  margin-bottom: 6px;
 }
 
 .sidebar-logo h1 {
   font-family: var(--font-serif);
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--off-white);
   letter-spacing: 0.05em;
@@ -240,7 +240,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .sidebar-logo p {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: var(--magenta);
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -251,22 +251,20 @@ h1, h2, h3, h4, h5, h6 {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex-grow: 1;
-  overflow-y: auto;
-  padding-right: 4px;
+  gap: 1px;
+  padding-right: 2px;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   color: var(--muted);
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all var(--transition-fast);
 }

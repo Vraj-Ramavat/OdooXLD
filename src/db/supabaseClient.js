@@ -36,6 +36,7 @@ class MockDatabase {
     getOrSet('expenses', mockData.MOCK_EXPENSES);
     getOrSet('community_trips', mockData.MOCK_COMMUNITY_TRIPS);
     getOrSet('timeline', mockData.MOCK_TIMELINE);
+    getOrSet('likes', []);
     getOrSet('shared_trips', [
       { id: "share-ee", trip_id: "trip-european-explorer", share_token: "shared-ee-explorer" }
     ]);
@@ -64,19 +65,56 @@ class MockDatabase {
 
   signIn(email, password) {
     const profiles = this.getTable('profiles');
-    // For mock simplicity, let's treat any user password as valid or check email
-    let user = profiles.find(p => p.email === email);
-    if (!user) {
-      // Return a simulated profile based on Alex or create new one
-      user = {
+    let user = null;
+
+    if (email === 'alex@globetrotter.com' || email === 'demo@globetrotter.com') {
+      user = profiles.find(p => p.id === 'profile-alex-johnson' || p.email === 'alex@globetrotter.com') || {
         ...mockData.MOCK_PROFILE,
-        id: "profile-" + Math.random().toString(36).substring(2, 9),
-        full_name: email.split('@')[0],
-        email: email
+        id: 'profile-alex-johnson',
+        email: 'alex@globetrotter.com'
       };
-      profiles.push(user);
+      if (!profiles.some(p => p.id === user.id)) {
+        profiles.push(user);
+        this.saveTable('profiles', profiles);
+      }
+    } else if (email === 'admin@globetrotter.com' || email.toLowerCase().includes('admin')) {
+      user = profiles.find(p => p.email === email);
+      if (!user) {
+        user = {
+          id: 'profile-admin',
+          full_name: 'Platform Administrator',
+          email: email,
+          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80',
+          country: 'Global',
+          bio: 'GlobalTrotter System Administrator',
+          is_admin: true
+        };
+        profiles.push(user);
+      } else {
+        user.is_admin = true;
+      }
       this.saveTable('profiles', profiles);
+    } else {
+      user = profiles.find(p => p.email === email);
+      if (!user) {
+        user = {
+          id: "profile-" + Math.random().toString(36).substring(2, 9),
+          full_name: email.split('@')[0],
+          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
+          country: "Global",
+          bio: "Digital Traveler Passport holder.",
+          email: email,
+          is_admin: false,
+          cities_visited: 0,
+          countries_visited: 0,
+          days_traveled: 0,
+          total_spent: 0
+        };
+        profiles.push(user);
+        this.saveTable('profiles', profiles);
+      }
     }
+
     localStorage.setItem('gt_active_user', JSON.stringify(user));
     return { data: { user }, error: null };
   }
@@ -85,10 +123,11 @@ class MockDatabase {
     const profiles = this.getTable('profiles');
     const newUser = {
       id: "profile-" + Math.random().toString(36).substring(2, 9),
-      full_name: `${meta.firstName || 'Alex'} ${meta.lastName || 'Johnson'}`.trim(),
+      full_name: `${meta.firstName || 'Traveler'} ${meta.lastName || ''}`.trim(),
       avatar_url: meta.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
-      country: meta.country || "India",
+      country: meta.country || "Global",
       bio: meta.bio || "Digital Traveler Passport holder.",
+      is_admin: email.toLowerCase().includes('admin'),
       cities_visited: 0,
       countries_visited: 0,
       days_traveled: 0,
@@ -115,7 +154,6 @@ class MockDatabase {
       profiles[index] = { ...profiles[index], ...data };
       this.saveTable('profiles', profiles);
       
-      // Update active user session too
       const active = this.getActiveUser();
       if (active && active.id === userId) {
         localStorage.setItem('gt_active_user', JSON.stringify(profiles[index]));
@@ -128,10 +166,8 @@ class MockDatabase {
   // Trips Operations
   getTrips(userId) {
     const trips = this.getTable('trips');
-    // Filter trips for this user
     const userTrips = trips.filter(t => t.user_id === userId);
     
-    // Add dynamically computed fields (cities, duration)
     const stops = this.getTable('trip_stops');
     const dests = this.getTable('destinations');
     
@@ -209,7 +245,6 @@ class MockDatabase {
     trips.push(newTrip);
     this.saveTable('trips', trips);
 
-    // Save initial stops if provided
     if (tripData.destinations && Array.isArray(tripData.destinations)) {
       tripData.destinations.forEach((destId, index) => {
         this.addTripStop(newTrip.id, destId, index + 1);
@@ -217,7 +252,6 @@ class MockDatabase {
     }
 
     this.addTimelineItem(`You created a new trip`, newTrip.name, "#C94F82");
-
     return newTrip;
   }
 
@@ -237,7 +271,6 @@ class MockDatabase {
     const filtered = trips.filter(t => t.id !== tripId);
     this.saveTable('trips', filtered);
 
-    // Cleanup related stops, itinerary items, expenses
     const stops = this.getTable('trip_stops').filter(s => s.trip_id !== tripId);
     this.saveTable('trip_stops', stops);
 
@@ -250,7 +283,7 @@ class MockDatabase {
     return true;
   }
 
-  // Trip Stops (Destinations within a trip)
+  // Trip Stops
   addTripStop(tripId, destinationId, order) {
     const stops = this.getTable('trip_stops');
     const newStop = {
@@ -267,9 +300,7 @@ class MockDatabase {
 
   updateTripStopsOrder(tripId, stopDestinations) {
     let stops = this.getTable('trip_stops');
-    // Remove existing stops for this trip
     stops = stops.filter(s => s.trip_id !== tripId);
-    // Add back with new ordering
     stopDestinations.forEach((dest, index) => {
       stops.push({
         id: dest.stop_id || "stop-" + Math.random().toString(36).substring(2, 9),
@@ -281,7 +312,6 @@ class MockDatabase {
     });
     this.saveTable('trip_stops', stops);
     
-    // Log timeline
     const trip = this.getTable('trips').find(t => t.id === tripId);
     if (trip && stopDestinations.length > 0) {
       this.addTimelineItem(`Updated route for your itinerary`, trip.name, "#48B7B0");
@@ -297,12 +327,16 @@ class MockDatabase {
         if (a.day_number !== b.day_number) {
           return a.day_number - b.day_number;
         }
+        if (a.order_index !== undefined && b.order_index !== undefined) {
+          return a.order_index - b.order_index;
+        }
         return a.start_time.localeCompare(b.start_time);
       });
   }
 
   addItineraryItem(tripId, itemData) {
     const items = this.getTable('itinerary_items');
+    const dayItems = items.filter(i => i.trip_id === tripId && i.day_number === Number(itemData.day_number || 1));
     const newItem = {
       id: "iti-" + Math.random().toString(36).substring(2, 9),
       trip_id: tripId,
@@ -311,17 +345,16 @@ class MockDatabase {
       activity_name: itemData.activity_name,
       duration_mins: Number(itemData.duration_mins || 60),
       cost: Number(itemData.cost || 0),
+      order_index: dayItems.length,
       activity_id: itemData.activity_id || null,
       created_at: new Date().toISOString()
     };
     items.push(newItem);
     this.saveTable('itinerary_items', items);
 
-    // Track activity timeline log
     const trip = this.getTable('trips').find(t => t.id === tripId);
     if (trip) {
       this.addTimelineItem(`Added ${newItem.activity_name} to Day ${newItem.day_number}`, trip.name, "#E6B83D");
-      // Add to expenses automatically for syncing
       this.addExpense(tripId, {
         category: 'Activities',
         amount: newItem.cost,
@@ -333,6 +366,18 @@ class MockDatabase {
     return newItem;
   }
 
+  reorderItinerary(tripId, updatedItems) {
+    const items = this.getTable('itinerary_items');
+    updatedItems.forEach((uItem, idx) => {
+      const match = items.find(i => i.id === uItem.id);
+      if (match) {
+        match.order_index = idx;
+      }
+    });
+    this.saveTable('itinerary_items', items);
+    return true;
+  }
+
   deleteItineraryItem(tripId, itemId) {
     const items = this.getTable('itinerary_items');
     const itemToDelete = items.find(i => i.id === itemId);
@@ -340,7 +385,6 @@ class MockDatabase {
     this.saveTable('itinerary_items', filtered);
 
     if (itemToDelete) {
-      // Find and delete matching expense
       const expenses = this.getTable('expenses');
       const descMatch = `Activity: ${itemToDelete.activity_name} (Day ${itemToDelete.day_number})`;
       const expFiltered = expenses.filter(e => !(e.trip_id === tripId && e.description === descMatch));
@@ -409,13 +453,46 @@ class MockDatabase {
       color: color || '#C94F82',
       time: "Just now"
     };
-    timeline.unshift(newItem); // Put at start
-    this.saveTable('timeline', timeline.slice(0, 10)); // Keep last 10
+    timeline.unshift(newItem);
+    this.saveTable('timeline', timeline.slice(0, 10));
   }
 
-  // Shared trips & Community
-  getCommunityTrips() {
-    return this.getTable('community_trips');
+  // Likes & Community
+  likeTrip(tripId, userId) {
+    const likes = this.getTable('likes');
+    const exists = likes.find(l => l.trip_id === tripId && l.user_id === userId);
+    if (!exists) {
+      likes.push({
+        id: "like-" + Math.random().toString(36).substring(2, 9),
+        trip_id: tripId,
+        user_id: userId,
+        created_at: new Date().toISOString()
+      });
+      this.saveTable('likes', likes);
+    }
+    return true;
+  }
+
+  unlikeTrip(tripId, userId) {
+    const likes = this.getTable('likes');
+    const filtered = likes.filter(l => !(l.trip_id === tripId && l.user_id === userId));
+    this.saveTable('likes', filtered);
+    return true;
+  }
+
+  getCommunityTrips(currentUserId = null) {
+    const commTrips = this.getTable('community_trips');
+    const likes = this.getTable('likes');
+
+    return commTrips.map(c => {
+      const tripLikes = likes.filter(l => l.trip_id === c.id);
+      const isLiked = currentUserId ? likes.some(l => l.trip_id === c.id && l.user_id === currentUserId) : false;
+      return {
+        ...c,
+        likes: c.likes + tripLikes.length,
+        is_liked: isLiked
+      };
+    });
   }
 
   publishTrip(tripId) {
@@ -437,12 +514,10 @@ class MockDatabase {
     shares.push(newShare);
     this.saveTable('shared_trips', shares);
 
-    // Also add to community page feed
     const community = this.getTable('community_trips');
     const activeUser = this.getActiveUser();
     const trip = trips[tripIndex];
     
-    // Get stops to count cities
     const stops = this.getTable('trip_stops');
     const dests = this.getTable('destinations');
     const tripStops = stops.filter(s => s.trip_id === trip.id).sort((a, b) => a.stop_order - b.stop_order);
@@ -479,7 +554,6 @@ class MockDatabase {
     const shares = this.getTable('shared_trips');
     const share = shares.find(s => s.share_token === shareToken);
     if (!share) {
-      // Fallback: check if shareToken matches one of the community trip IDs
       const commTrips = this.getTable('community_trips');
       const comm = commTrips.find(c => c.id === shareToken);
       if (comm) {
@@ -500,11 +574,9 @@ class MockDatabase {
       return null;
     }
     
-    // Load full relational trip
     const trip = this.getTrip(share.trip_id);
     if (!trip) return null;
 
-    const activeUser = this.getActiveUser();
     const profiles = this.getTable('profiles');
     const authorProf = profiles.find(p => p.id === trip.user_id);
 
@@ -516,7 +588,6 @@ class MockDatabase {
   }
 
   cloneTrip(sharedTripId, targetUserId) {
-    // 1. Get original trip (could be from user trips or public community trip)
     let srcTrip = null;
     let srcStops = [];
     let srcItinerary = [];
@@ -534,11 +605,9 @@ class MockDatabase {
         srcExpenses = this.getTable('expenses').filter(e => e.trip_id === srcTrip.id);
       }
     } else {
-      // Check if it's a community trip ID
       const commTrips = this.getTable('community_trips');
       const comm = commTrips.find(c => c.id === sharedTripId);
       if (comm) {
-        // Create matching mock data for community cloning
         srcTrip = {
           name: comm.name,
           description: `Clone of ${comm.name} shared by ${comm.author}.`,
@@ -554,7 +623,6 @@ class MockDatabase {
 
     if (!srcTrip) return null;
 
-    // 2. Insert new trip
     const clonedTripId = "trip-" + Math.random().toString(36).substring(2, 9);
     const newTrip = {
       id: clonedTripId,
@@ -574,7 +642,6 @@ class MockDatabase {
     trips.push(newTrip);
     this.saveTable('trips', trips);
 
-    // 3. Clone stops
     const stops = this.getTable('trip_stops');
     if (srcStops.length > 0) {
       srcStops.forEach(s => {
@@ -587,7 +654,6 @@ class MockDatabase {
         });
       });
     } else {
-      // Map community stops (cities) to default destinations
       const allDests = this.getTable('destinations');
       const commStops = srcTrip.cities || (sharedTripId.startsWith('pub-') ? this.getTable('community_trips').find(c => c.id === sharedTripId)?.cities : null);
       if (commStops && Array.isArray(commStops)) {
@@ -607,10 +673,9 @@ class MockDatabase {
     }
     this.saveTable('trip_stops', stops);
 
-    // 4. Clone itinerary items
     const itinerary = this.getTable('itinerary_items');
     if (srcItinerary.length > 0) {
-      srcItinerary.forEach(i => {
+      srcItinerary.forEach((i, idx) => {
         itinerary.push({
           id: "iti-" + Math.random().toString(36).substring(2, 9),
           trip_id: clonedTripId,
@@ -619,21 +684,20 @@ class MockDatabase {
           activity_name: i.activity_name,
           duration_mins: i.duration_mins,
           cost: i.cost,
+          order_index: idx,
           activity_id: i.activity_id,
           created_at: new Date().toISOString()
         });
       });
     } else {
-      // Add a couple of default activities for the day if community clone
       itinerary.push(
-        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "09:00", activity_name: "Hotel Check-in & Coffee", duration_mins: 60, cost: 350 },
-        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "10:30", activity_name: "Discover Main Square & Walking Tour", duration_mins: 120, cost: 0 },
-        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "13:00", activity_name: "Local Food Tasting", duration_mins: 90, cost: 1200 }
+        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "09:00", activity_name: "Hotel Check-in & Coffee", duration_mins: 60, cost: 350, order_index: 0 },
+        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "10:30", activity_name: "Discover Main Square & Walking Tour", duration_mins: 120, cost: 0, order_index: 1 },
+        { id: "iti-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, day_number: 1, start_time: "13:00", activity_name: "Local Food Tasting", duration_mins: 90, cost: 1200, order_index: 2 }
       );
     }
     this.saveTable('itinerary_items', itinerary);
 
-    // 5. Clone expenses
     const expenses = this.getTable('expenses');
     if (srcExpenses.length > 0) {
       srcExpenses.forEach(e => {
@@ -648,7 +712,6 @@ class MockDatabase {
         });
       });
     } else {
-      // Base estimated expenses
       expenses.push(
         { id: "exp-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, category: "Transport", amount: Number(newTrip.budget * 0.4), description: "Cloned trip transport estimate", date: newTrip.start_date },
         { id: "exp-" + Math.random().toString(36).substring(2, 9), trip_id: clonedTripId, category: "Stay", amount: Number(newTrip.budget * 0.35), description: "Cloned trip lodging estimate", date: newTrip.start_date }
@@ -660,6 +723,90 @@ class MockDatabase {
 
     return newTrip;
   }
+
+  // Admin Analytics Aggregates
+  getAllUsers() {
+    const profiles = this.getTable('profiles');
+    const trips = this.getTable('trips');
+    return profiles.map(p => {
+      const userTrips = trips.filter(t => t.user_id === p.id);
+      return {
+        ...p,
+        trips_count: userTrips.length,
+        trips: userTrips
+      };
+    });
+  }
+
+  getPopularCities() {
+    const stops = this.getTable('trip_stops');
+    const dests = this.getTable('destinations');
+    const counts = {};
+    stops.forEach(s => {
+      counts[s.destination_id] = (counts[s.destination_id] || 0) + 1;
+    });
+    return dests.map(d => ({
+      ...d,
+      count: counts[d.id] || Math.floor(Math.random() * 3) + 1
+    })).sort((a, b) => b.count - a.count);
+  }
+
+  getPopularActivities() {
+    const items = this.getTable('itinerary_items');
+    const activities = this.getTable('activities');
+    const counts = {};
+    items.forEach(i => {
+      const name = i.activity_name;
+      counts[name] = counts[name] || { name, count: 0, cost: i.cost, category: 'Activities' };
+      counts[name].count += 1;
+    });
+    activities.forEach(a => {
+      if (!counts[a.name]) {
+        counts[a.name] = { name: a.name, count: Math.floor(Math.random() * 4) + 1, cost: a.cost, category: a.category };
+      }
+    });
+    return Object.values(counts).sort((a, b) => b.count - a.count);
+  }
+
+  getPlatformStats() {
+    const profiles = this.getTable('profiles');
+    const trips = this.getTable('trips');
+    const expenses = this.getTable('expenses');
+
+    const totalUsers = profiles.length || 1;
+    const totalTrips = trips.length || 1;
+    const totalBudget = trips.reduce((acc, curr) => acc + Number(curr.budget || 0), 0);
+    const avgBudget = Math.round(totalBudget / totalTrips);
+    const totalExpenses = expenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+
+    const now = new Date();
+    let ongoing = 0, upcoming = 0, completed = 0;
+    trips.forEach(t => {
+      const s = new Date(t.start_date);
+      const e = new Date(t.end_date);
+      if (now >= s && now <= e) ongoing++;
+      else if (now < s) upcoming++;
+      else completed++;
+    });
+    if (ongoing === 0 && upcoming === 0 && completed === 0) {
+      ongoing = 1; upcoming = 2; completed = 1;
+    }
+
+    return {
+      totalUsers,
+      totalTrips,
+      avgBudget,
+      totalExpenses,
+      statusBreakdown: { ongoing, upcoming, completed },
+      tripsOverTime: [
+        { month: 'Jan', count: 2 },
+        { month: 'Feb', count: 3 },
+        { month: 'Mar', count: 5 },
+        { month: 'Apr', count: 4 },
+        { month: 'May', count: 7 }
+      ]
+    };
+  }
 }
 
 export const mockDb = new MockDatabase();
@@ -670,7 +817,11 @@ export const db = {
     getUser: async () => {
       if (realSupabase) {
         const { data: { user } } = await realSupabase.auth.getUser();
-        return { data: { user }, error: null };
+        if (user) {
+          const { data: prof } = await realSupabase.from('profiles').select('*').eq('id', user.id).single();
+          return { data: { user: { ...user, ...prof } }, error: null };
+        }
+        return { data: { user: null }, error: null };
       }
       const user = mockDb.getActiveUser();
       return { data: { user }, error: null };
@@ -719,7 +870,6 @@ export const db = {
   trips: {
     list: async (userId) => {
       if (realSupabase) {
-        // Query trips with stops joined
         const { data, error } = await realSupabase
           .from('trips')
           .select('*, trip_stops(*, destinations(*))')
@@ -728,7 +878,6 @@ export const db = {
         
         if (error) return { data: null, error };
         
-        // Map to uniform client model
         const mapped = data.map(t => {
           const sortedStops = (t.trip_stops || []).sort((a, b) => a.stop_order - b.stop_order);
           const cities = sortedStops.map(s => s.destinations?.name).filter(Boolean);
@@ -794,7 +943,6 @@ export const db = {
 
         if (error) return { data: null, error };
 
-        // Add stops
         if (tripData.destinations && Array.isArray(tripData.destinations)) {
           const stopsToInsert = tripData.destinations.map((destId, index) => ({
             trip_id: data.id,
@@ -821,9 +969,7 @@ export const db = {
     },
     updateStopsOrder: async (tripId, stopDestinations) => {
       if (realSupabase) {
-        // Delete old stops
         await realSupabase.from('trip_stops').delete().eq('trip_id', tripId);
-        // Insert new order
         const stopsToInsert = stopDestinations.map((dest, idx) => ({
           trip_id: tripId,
           destination_id: dest.id,
@@ -844,6 +990,7 @@ export const db = {
           .select('*')
           .eq('trip_id', tripId)
           .order('day_number')
+          .order('order_index', { ascending: true })
           .order('start_time');
       }
       return { data: mockDb.getItineraryItems(tripId), error: null };
@@ -857,6 +1004,17 @@ export const db = {
           .single();
       }
       return { data: mockDb.addItineraryItem(tripId, itemData), error: null };
+    },
+    reorder: async (tripId, updatedItems) => {
+      if (realSupabase) {
+        const promises = updatedItems.map((item, idx) =>
+          realSupabase.from('itinerary_items').update({ order_index: idx }).eq('id', item.id)
+        );
+        await Promise.all(promises);
+        return { error: null };
+      }
+      mockDb.reorderItinerary(tripId, updatedItems);
+      return { error: null };
     },
     delete: async (tripId, itemId) => {
       if (realSupabase) {
@@ -912,12 +1070,11 @@ export const db = {
   },
 
   community: {
-    list: async () => {
-      // Fetches community trip cards
+    list: async (currentUserId = null) => {
       if (realSupabase) {
         const { data, error } = await realSupabase
           .from('trips')
-          .select('*, profiles(full_name, avatar_url), trip_stops(*, destinations(*))')
+          .select('*, profiles(full_name, avatar_url), trip_stops(*, destinations(*)), likes(*)')
           .eq('is_public', true)
           .order('created_at', { ascending: false });
         
@@ -929,6 +1086,8 @@ export const db = {
           const sDate = new Date(t.start_date);
           const eDate = new Date(t.end_date);
           const duration = Math.ceil(Math.abs(eDate - sDate) / (1000 * 60 * 60 * 24)) || 1;
+          const likesList = t.likes || [];
+          const isLiked = currentUserId ? likesList.some(l => l.user_id === currentUserId) : false;
 
           return {
             id: t.id,
@@ -941,20 +1100,33 @@ export const db = {
             duration: duration,
             budget: t.budget,
             currency: t.currency,
-            likes: Math.floor(Math.random() * 50) + 10,
+            likes: likesList.length,
+            is_liked: isLiked,
             stops: cities.map(c => ({ name: c, days: 2 }))
           };
         });
         return { data: mapped, error: null };
       }
-      return { data: mockDb.getCommunityTrips(), error: null };
+      return { data: mockDb.getCommunityTrips(currentUserId), error: null };
     },
+
+    like: async (tripId, userId) => {
+      if (realSupabase) {
+        return await realSupabase.from('likes').insert({ trip_id: tripId, user_id: userId });
+      }
+      return { data: mockDb.likeTrip(tripId, userId), error: null };
+    },
+
+    unlike: async (tripId, userId) => {
+      if (realSupabase) {
+        return await realSupabase.from('likes').delete().eq('trip_id', tripId).eq('user_id', userId);
+      }
+      return { data: mockDb.unlikeTrip(tripId, userId), error: null };
+    },
+
     publish: async (tripId) => {
       if (realSupabase) {
-        // Set is_public true
         await realSupabase.from('trips').update({ is_public: true }).eq('id', tripId);
-        
-        // Generate share token
         const shareToken = "shared-" + Math.random().toString(36).substring(2, 9);
         await realSupabase.from('shared_trips').insert({ trip_id: tripId, share_token: shareToken });
         return { data: shareToken, error: null };
@@ -962,6 +1134,7 @@ export const db = {
       const token = mockDb.publishTrip(tripId);
       return { data: token, error: token ? null : 'Error publishing' };
     },
+
     getShared: async (shareToken) => {
       if (realSupabase) {
         const { data, error } = await realSupabase
@@ -1000,9 +1173,9 @@ export const db = {
       const trip = mockDb.getPublicTrip(shareToken);
       return { data: trip, error: trip ? null : 'Shared trip not found' };
     },
+
     clone: async (sharedTripId, targetUserId) => {
       if (realSupabase) {
-        // 1. Get original trip details
         const { data: shared } = await realSupabase
           .from('shared_trips')
           .select('*, trips(*)')
@@ -1011,14 +1184,12 @@ export const db = {
         
         let srcTrip = shared?.trips;
         if (!srcTrip) {
-          // Try community id directly
           const { data: direct } = await realSupabase.from('trips').select('*').eq('id', sharedTripId).single();
           srcTrip = direct;
         }
 
         if (!srcTrip) return { data: null, error: 'Source trip not found' };
 
-        // 2. Insert new trip
         const { data: newTrip, error: tErr } = await realSupabase
           .from('trips')
           .insert({
@@ -1037,7 +1208,6 @@ export const db = {
 
         if (tErr) return { data: null, error: tErr };
 
-        // 3. Clone stops
         const { data: stops } = await realSupabase.from('trip_stops').select('*').eq('trip_id', srcTrip.id);
         if (stops && stops.length > 0) {
           const stopsToInsert = stops.map(s => ({
@@ -1048,22 +1218,21 @@ export const db = {
           await realSupabase.from('trip_stops').insert(stopsToInsert);
         }
 
-        // 4. Clone itinerary
         const { data: itinerary } = await realSupabase.from('itinerary_items').select('*').eq('trip_id', srcTrip.id);
         if (itinerary && itinerary.length > 0) {
-          const itineraryToInsert = itinerary.map(i => ({
+          const itineraryToInsert = itinerary.map((i, idx) => ({
             trip_id: newTrip.id,
             day_number: i.day_number,
             start_time: i.start_time,
             activity_name: i.activity_name,
             duration_mins: i.duration_mins,
             cost: i.cost,
+            order_index: idx,
             activity_id: i.activity_id
           }));
           await realSupabase.from('itinerary_items').insert(itineraryToInsert);
         }
 
-        // 5. Clone expenses
         const { data: expenses } = await realSupabase.from('expenses').select('*').eq('trip_id', srcTrip.id);
         if (expenses && expenses.length > 0) {
           const expensesToInsert = expenses.map(e => ({
@@ -1082,10 +1251,117 @@ export const db = {
     }
   },
 
+  admin: {
+    getAllUsers: async () => {
+      if (realSupabase) {
+        const { data: profiles, error } = await realSupabase.from('profiles').select('*, trips(id)');
+        if (error) return { data: null, error };
+        const mapped = profiles.map(p => ({
+          ...p,
+          trips_count: (p.trips || []).length
+        }));
+        return { data: mapped, error: null };
+      }
+      return { data: mockDb.getAllUsers(), error: null };
+    },
+
+    getPopularCities: async () => {
+      if (realSupabase) {
+        const { data: stops, error } = await realSupabase
+          .from('trip_stops')
+          .select('destination_id, destinations(name, country, image_url)');
+        if (error) return { data: null, error };
+
+        const counts = {};
+        stops.forEach(s => {
+          const id = s.destination_id;
+          if (!counts[id]) {
+            counts[id] = {
+              id,
+              name: s.destinations?.name || 'Unknown',
+              country: s.destinations?.country || 'Global',
+              image_url: s.destinations?.image_url,
+              count: 0
+            };
+          }
+          counts[id].count += 1;
+        });
+
+        const sorted = Object.values(counts).sort((a, b) => b.count - a.count);
+        return { data: sorted, error: null };
+      }
+      return { data: mockDb.getPopularCities(), error: null };
+    },
+
+    getPopularActivities: async () => {
+      if (realSupabase) {
+        const { data: items, error } = await realSupabase
+          .from('itinerary_items')
+          .select('activity_name, cost');
+        if (error) return { data: null, error };
+
+        const counts = {};
+        items.forEach(i => {
+          const name = i.activity_name;
+          if (!counts[name]) {
+            counts[name] = { name, count: 0, cost: i.cost || 0, category: 'Activities' };
+          }
+          counts[name].count += 1;
+        });
+
+        const sorted = Object.values(counts).sort((a, b) => b.count - a.count);
+        return { data: sorted, error: null };
+      }
+      return { data: mockDb.getPopularActivities(), error: null };
+    },
+
+    getPlatformStats: async () => {
+      if (realSupabase) {
+        const { data: profiles } = await realSupabase.from('profiles').select('id');
+        const { data: trips } = await realSupabase.from('trips').select('budget, start_date, end_date');
+        const { data: expenses } = await realSupabase.from('expenses').select('amount');
+
+        const totalUsers = (profiles || []).length || 1;
+        const totalTrips = (trips || []).length || 1;
+        const totalBudget = (trips || []).reduce((a, c) => a + Number(c.budget || 0), 0);
+        const avgBudget = Math.round(totalBudget / totalTrips);
+        const totalExpenses = (expenses || []).reduce((a, c) => a + Number(c.amount || 0), 0);
+
+        const now = new Date();
+        let ongoing = 0, upcoming = 0, completed = 0;
+        (trips || []).forEach(t => {
+          const s = new Date(t.start_date);
+          const e = new Date(t.end_date);
+          if (now >= s && now <= e) ongoing++;
+          else if (now < s) upcoming++;
+          else completed++;
+        });
+
+        return {
+          data: {
+            totalUsers,
+            totalTrips,
+            avgBudget,
+            totalExpenses,
+            statusBreakdown: { ongoing, upcoming, completed },
+            tripsOverTime: [
+              { month: 'Jan', count: 1 },
+              { month: 'Feb', count: 2 },
+              { month: 'Mar', count: 4 },
+              { month: 'Apr', count: 3 },
+              { month: 'May', count: 5 }
+            ]
+          },
+          error: null
+        };
+      }
+      return { data: mockDb.getPlatformStats(), error: null };
+    }
+  },
+
   timeline: {
     list: async () => {
       if (realSupabase) {
-        // Return standard timeline list, here falling back to mock or select empty
         return { data: mockDb.getTimeline(), error: null };
       }
       return { data: mockDb.getTimeline(), error: null };

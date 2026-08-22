@@ -84,19 +84,25 @@ export default function ItineraryBuilder({ activeUser, selectedTripId, onSelectT
     }
   };
 
-  const handleMoveActivity = (idx, direction) => {
-    // Simple mock index reorder for visual feedback
-    const nextIti = [...itinerary];
-    if (direction === 'up' && idx > 0) {
-      const temp = nextIti[idx];
-      nextIti[idx] = nextIti[idx - 1];
-      nextIti[idx - 1] = temp;
-    } else if (direction === 'down' && idx < nextIti.length - 1) {
-      const temp = nextIti[idx];
-      nextIti[idx] = nextIti[idx + 1];
-      nextIti[idx + 1] = temp;
+  const handleMoveActivity = async (dayNum, actIdx, direction) => {
+    const dayActivities = itinerary.filter(i => i.day_number === dayNum);
+    if (direction === 'up' && actIdx > 0) {
+      const temp = dayActivities[actIdx];
+      dayActivities[actIdx] = dayActivities[actIdx - 1];
+      dayActivities[actIdx - 1] = temp;
+    } else if (direction === 'down' && actIdx < dayActivities.length - 1) {
+      const temp = dayActivities[actIdx];
+      dayActivities[actIdx] = dayActivities[actIdx + 1];
+      dayActivities[actIdx + 1] = temp;
     }
-    setItinerary(nextIti);
+
+    const otherActivities = itinerary.filter(i => i.day_number !== dayNum);
+    const updatedItinerary = [...otherActivities, ...dayActivities];
+
+    setItinerary(updatedItinerary);
+    if (trip) {
+      await db.itinerary.reorder(trip.id, dayActivities);
+    }
   };
 
   // Group activities by day
@@ -322,14 +328,14 @@ export default function ItineraryBuilder({ activeUser, selectedTripId, onSelectT
                                   {/* Sort & Delete control row */}
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <button 
-                                      onClick={() => handleMoveActivity(actIdx, 'up')}
+                                      onClick={() => handleMoveActivity(dayNum, actIdx, 'up')}
                                       disabled={actIdx === 0}
                                       style={{ background: 'none', border: 'none', color: actIdx === 0 ? 'rgba(255,255,255,0.02)' : 'var(--muted)', cursor: 'pointer' }}
                                     >
                                       <ArrowUp size={14} />
                                     </button>
                                     <button 
-                                      onClick={() => handleMoveActivity(actIdx, 'down')}
+                                      onClick={() => handleMoveActivity(dayNum, actIdx, 'down')}
                                       disabled={actIdx === dayActivities.length - 1}
                                       style={{ background: 'none', border: 'none', color: actIdx === dayActivities.length - 1 ? 'rgba(255,255,255,0.02)' : 'var(--muted)', cursor: 'pointer' }}
                                     >

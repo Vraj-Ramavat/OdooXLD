@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     avatar_url TEXT,
     country TEXT,
     bio TEXT,
+    is_admin BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS public.itinerary_items (
     activity_name TEXT NOT NULL,
     duration_mins INTEGER DEFAULT 60,
     cost NUMERIC(10, 2) DEFAULT 0.00,
+    order_index INTEGER DEFAULT 0,
     activity_id UUID REFERENCES public.activities(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

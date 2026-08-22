@@ -243,6 +243,7 @@ export const MOCK_PROFILE = {
   avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
   country: "India",
   bio: "Curator of slow itineraries. Seeking cinematic angles, late-night vinyl bars, and authentic culinary secrets around the globe.",
+  is_admin: true,
   cities_visited: 12,
   countries_visited: 7,
   days_traveled: 38,
@@ -321,20 +322,20 @@ export const MOCK_STOPS = [
 
 export const MOCK_ITINERARY = [
   // Day 1 (Paris)
-  { id: "iti-ee-1", trip_id: "trip-european-explorer", day_number: 1, start_time: "09:00", activity_name: "Breakfast at Angelina", duration_mins: 60, cost: 1350 },
-  { id: "iti-ee-2", trip_id: "trip-european-explorer", day_number: 1, start_time: "10:30", activity_name: "Eiffel Tower Guided Summit", duration_mins: 120, cost: 3150 },
-  { id: "iti-ee-3", trip_id: "trip-european-explorer", day_number: 1, start_time: "13:00", activity_name: "Lunch at Le Relais de l'Entrecôte", duration_mins: 90, cost: 2250 },
-  { id: "iti-ee-4", trip_id: "trip-european-explorer", day_number: 1, start_time: "15:30", activity_name: "Louvre Museum Audio Tour", duration_mins: 180, cost: 1980 },
+  { id: "iti-ee-1", trip_id: "trip-european-explorer", day_number: 1, start_time: "09:00", activity_name: "Breakfast at Angelina", duration_mins: 60, cost: 1350, order_index: 0 },
+  { id: "iti-ee-2", trip_id: "trip-european-explorer", day_number: 1, start_time: "10:30", activity_name: "Eiffel Tower Guided Summit", duration_mins: 120, cost: 3150, order_index: 1 },
+  { id: "iti-ee-3", trip_id: "trip-european-explorer", day_number: 1, start_time: "13:00", activity_name: "Lunch at Le Relais de l'Entrecôte", duration_mins: 90, cost: 2250, order_index: 2 },
+  { id: "iti-ee-4", trip_id: "trip-european-explorer", day_number: 1, start_time: "15:30", activity_name: "Louvre Museum Audio Tour", duration_mins: 180, cost: 1980, order_index: 3 },
   // Day 2 (Paris)
-  { id: "iti-ee-5", trip_id: "trip-european-explorer", day_number: 2, start_time: "10:00", activity_name: "Montmartre & Sacré-Cœur Walk", duration_mins: 120, cost: 0 },
-  { id: "iti-ee-6", trip_id: "trip-european-explorer", day_number: 2, start_time: "14:00", activity_name: "Croissant Workshop", duration_mins: 90, cost: 3800 },
+  { id: "iti-ee-5", trip_id: "trip-european-explorer", day_number: 2, start_time: "10:00", activity_name: "Montmartre & Sacré-Cœur Walk", duration_mins: 120, cost: 0, order_index: 0 },
+  { id: "iti-ee-6", trip_id: "trip-european-explorer", day_number: 2, start_time: "14:00", activity_name: "Croissant Workshop", duration_mins: 90, cost: 3800, order_index: 1 },
   // Day 3 (Rome)
-  { id: "iti-ee-7", trip_id: "trip-european-explorer", day_number: 3, start_time: "09:00", activity_name: "Colosseum & Roman Forum Tour", duration_mins: 180, cost: 4000 },
-  { id: "iti-ee-8", trip_id: "trip-european-explorer", day_number: 3, start_time: "14:30", activity_name: "Trevi Fountain & Spanish Steps", duration_mins: 90, cost: 0 },
+  { id: "iti-ee-7", trip_id: "trip-european-explorer", day_number: 3, start_time: "09:00", activity_name: "Colosseum & Roman Forum Tour", duration_mins: 180, cost: 4000, order_index: 0 },
+  { id: "iti-ee-8", trip_id: "trip-european-explorer", day_number: 3, start_time: "14:30", activity_name: "Trevi Fountain & Spanish Steps", duration_mins: 90, cost: 0, order_index: 1 },
   // Day 4 (Rome) - Budget Warn Test
-  { id: "iti-ee-9", trip_id: "trip-european-explorer", day_number: 4, start_time: "09:00", activity_name: "Vatican Museum & Sistine Chapel", duration_mins: 240, cost: 4500 },
-  { id: "iti-ee-10", trip_id: "trip-european-explorer", day_number: 4, start_time: "15:00", activity_name: "Exclusive Private Gallery Tour", duration_mins: 120, cost: 14000 }, // Generates Day 4 budget over
-  { id: "iti-ee-11", trip_id: "trip-european-explorer", day_number: 4, start_time: "19:00", activity_name: "Trastevere Luxury Food Tasting", duration_mins: 150, cost: 5000 }
+  { id: "iti-ee-9", trip_id: "trip-european-explorer", day_number: 4, start_time: "09:00", activity_name: "Vatican Museum & Sistine Chapel", duration_mins: 240, cost: 4500, order_index: 0 },
+  { id: "iti-ee-10", trip_id: "trip-european-explorer", day_number: 4, start_time: "15:00", activity_name: "Exclusive Private Gallery Tour", duration_mins: 120, cost: 14000, order_index: 1 }, // Generates Day 4 budget over
+  { id: "iti-ee-11", trip_id: "trip-european-explorer", day_number: 4, start_time: "19:00", activity_name: "Trastevere Luxury Food Tasting", duration_mins: 150, cost: 5000, order_index: 2 }
 ];
 
 export const MOCK_EXPENSES = [

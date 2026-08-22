@@ -15,25 +15,42 @@ export default function CommunityPage({ activeUser, onNavigate, onSelectTrip, on
 
   const loadCommunityPosts = async () => {
     setLoading(true);
-    const { data } = await db.community.list();
+    const { data } = await db.community.list(activeUser?.id);
     if (data) {
       setPosts(data);
+      const likedState = {};
+      data.forEach(p => {
+        if (p.is_liked) likedState[p.id] = true;
+      });
+      setLikedPosts(likedState);
     }
     setLoading(false);
   };
 
-  const handleLike = (postId) => {
-    setLikedPosts(prev => {
-      const isLiked = !prev[postId];
-      // Increment/decrement likes count locally
-      setPosts(current => current.map(p => {
-        if (p.id === postId) {
-          return { ...p, likes: p.likes + (isLiked ? 1 : -1) };
-        }
-        return p;
-      }));
-      return { ...prev, [postId]: isLiked };
-    });
+  const handleLike = async (postId) => {
+    if (!activeUser) {
+      alert("Please log in to like community posts!");
+      return;
+    }
+
+    const isCurrentlyLiked = !!likedPosts[postId];
+    if (isCurrentlyLiked) {
+      await db.community.unlike(postId, activeUser.id);
+    } else {
+      await db.community.like(postId, activeUser.id);
+    }
+
+    setLikedPosts(prev => ({ ...prev, [postId]: !isCurrentlyLiked }));
+    setPosts(current => current.map(p => {
+      if (p.id === postId) {
+        return { 
+          ...p, 
+          likes: Math.max(0, p.likes + (isCurrentlyLiked ? -1 : 1)),
+          is_liked: !isCurrentlyLiked 
+        };
+      }
+      return p;
+    }));
   };
 
   const handleCopyLink = (postId) => {

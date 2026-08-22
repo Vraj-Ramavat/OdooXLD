@@ -4,7 +4,8 @@ import { MapPin, Calendar, DollarSign, Eye, Edit, Trash2, Share2, Plus, Sparkles
 
 export default function MyTrips({ activeUser, onNavigate, onSelectTrip }) {
   const [trips, setTrips] = useState([]);
-  const [activeTab, setActiveTab] = useState('UPCOMING'); // UPCOMING, ONGOING, COMPLETED
+  const [activeTab, setActiveTab] = useState('ALL'); // ALL, UPCOMING, ONGOING, COMPLETED
+  const [sortBy, setSortBy] = useState('newest'); // newest, oldest, budget-desc, budget-asc, duration
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -24,10 +25,10 @@ export default function MyTrips({ activeUser, onNavigate, onSelectTrip }) {
     setLoading(false);
   };
 
-  // Filter trips based on dates relative to current date (Aug 22, 2026)
-  const getFilteredTrips = () => {
-    const today = new Date("2026-08-22"); // Fixed context date
-    return trips.filter(t => {
+  // Filter and sort trips
+  const getProcessedTrips = () => {
+    const today = new Date("2026-08-22");
+    let filtered = trips.filter(t => {
       const sDate = new Date(t.start_date);
       const eDate = new Date(t.end_date);
       
@@ -35,9 +36,20 @@ export default function MyTrips({ activeUser, onNavigate, onSelectTrip }) {
         return sDate > today;
       } else if (activeTab === 'ONGOING') {
         return sDate <= today && eDate >= today;
-      } else {
+      } else if (activeTab === 'COMPLETED') {
         return eDate < today;
       }
+      return true;
+    });
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.start_date) - new Date(a.start_date);
+      if (sortBy === 'oldest') return new Date(a.start_date) - new Date(b.start_date);
+      if (sortBy === 'budget-desc') return Number(b.budget) - Number(a.budget);
+      if (sortBy === 'budget-asc') return Number(a.budget) - Number(b.budget);
+      if (sortBy === 'duration') return (b.duration_days || 0) - (a.duration_days || 0);
+      return 0;
     });
   };
 
@@ -68,7 +80,7 @@ export default function MyTrips({ activeUser, onNavigate, onSelectTrip }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const filteredTrips = getFilteredTrips();
+  const filteredTrips = getProcessedTrips();
 
   return (
     <div className="flex-col">
@@ -93,17 +105,45 @@ export default function MyTrips({ activeUser, onNavigate, onSelectTrip }) {
         </button>
       </div>
 
-      {/* Tabs Menu */}
-      <div className="tabs-container">
-        {['UPCOMING', 'ONGOING', 'COMPLETED'].map(tab => (
-          <button 
-            key={tab} 
-            className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+      {/* Toolbar: Group By Status Tabs & Sort By Dropdown */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px',
+        margin: '10px 0'
+      }}>
+        {/* Group By Status Tabs */}
+        <div className="tabs-container" style={{ margin: 0 }}>
+          <span className="mono-text text-xs text-[#A8A2A8] mr-2 self-center font-mono">GROUP_BY:</span>
+          {['ALL', 'UPCOMING', 'ONGOING', 'COMPLETED'].map(tab => (
+            <button 
+              key={tab} 
+              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Sort By Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label className="mono-text text-xs text-[#A8A2A8] font-mono">SORT_BY:</label>
+          <select 
+            className="form-input" 
+            style={{ width: '180px', height: '36px', padding: '0 10px', fontSize: '0.8rem', fontFamily: "'Space Mono', monospace" }}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
           >
-            {tab}
-          </button>
-        ))}
+            <option value="newest">Date: Newest First</option>
+            <option value="oldest">Date: Oldest First</option>
+            <option value="budget-desc">Budget: High to Low</option>
+            <option value="budget-asc">Budget: Low to High</option>
+            <option value="duration">Duration: Longest</option>
+          </select>
+        </div>
       </div>
 
       {/* Grid of Trip Cards */}
